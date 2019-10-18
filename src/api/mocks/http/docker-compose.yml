@@ -1,0 +1,30 @@
+version: "3.7"
+services:
+    mysql:
+        container_name: configs-db
+        environment:
+            - MYSQL_ROOT_PASSWORD=123456
+            - MYSQL_DATABASE=rpconfigs
+        ports:
+            - '3306:3306'
+        image: 'mysql:5.7'
+        healthcheck:
+            test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+            timeout: 20s
+            retries: 10
+
+    workflows-api:
+        container_name: workflows-api
+        ports:
+            - '7777:8080'
+        volumes:
+            - '$PWD:/home/wiremock'
+        image: rodolpheche/wiremock
+
+    ci-api:
+        container_name: ci-api
+        ports:
+            - '8888:8080'
+        volumes:
+            - '$PWD:/home/wiremock'
+        image: rodolpheche/wiremock

@@ -22,8 +22,8 @@ _testmain.go
 *.exe
 *.test
 *.prof
-
-.idea/
-.vscode/
-code.tar
-coverage/
+*.test
+*.out
+*.txt
+cover.html
+README.html
