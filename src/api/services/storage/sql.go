@@ -2,6 +2,8 @@ package storage
 
 import (
 	"fmt"
+	"github.com/herbal828/ci_cd-api/src/api/configs"
+	"github.com/herbal828/ci_cd-api/src/api/models"
 
 	"github.com/jinzhu/gorm"
 )

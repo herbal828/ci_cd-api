@@ -30,6 +30,14 @@
   version = "v1.4.0"
 
 [[projects]]
+  digest = "1:ec6f9bf5e274c833c911923c9193867f3f18788c461f76f05f62bb1510e0ae65"
+  name = "github.com/go-sql-driver/mysql"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "72cd26f257d44c1114970e19afddcd812016007e"
+  version = "v1.4.1"
+
+[[projects]]
   digest = "1:be408f349cae090a7c17a279633d6e62b00068e64af66a582cae0983de8890ea"
   name = "github.com/golang/mock"
   packages = ["gomock"]
@@ -46,9 +54,12 @@
   version = "v1.3.0"
 
 [[projects]]
-  digest = "1:0ba2632215132e946413632241c2f9e67439addbe5f243b86bb81199bd15c8e9"
+  digest = "1:bf3bd8cc2f7357b8ab72f697bd05f308f7252094195c86872ba1505a644cdb59"
   name = "github.com/jinzhu/gorm"
-  packages = ["."]
+  packages = [
+    ".",
+    "dialects/mysql",
+  ]
   pruneopts = "UT"
   revision = "81c17a7e2529c59efc4e74c5b32c1fb71fb12fa2"
   version = "v1.9.11"
@@ -76,6 +87,14 @@
   pruneopts = "UT"
   revision = "c2a7a6ca930a4cd0bc33a3f298eb71960732a3a7"
   version = "v0.0.7"
+
+[[projects]]
+  branch = "change_uuid"
+  digest = "1:5141cc6ca884022c84c9b293b63293279d95e0169b6fe8735e17f772d4dc764e"
+  name = "github.com/mercadolibre/go-meli-toolkit"
+  packages = ["goutils/apierrors"]
+  pruneopts = "UT"
+  revision = "e20b86a7d0863c99a2359b48cbfe49fad316bca3"
 
 [[projects]]
   branch = "master"
@@ -127,11 +146,19 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7c927f17d868be652a4cfe7de23e4292dea5b14d974a1d536e3b7cb7e79fd695"
+  digest = "1:999c8e6b10ddb08bc4ea3a56d4e838194c4884eac6ecf90a9aa98ed8475fdf37"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "b09406accb4736d857a32bf9444cd7edae2ffa79"
+  revision = "f43be2a4598cf3a47be9f94f0c28197ed9eae611"
+
+[[projects]]
+  digest = "1:c25289f43ac4a68d88b02245742347c94f1e108c534dda442188015ff80669b3"
+  name = "google.golang.org/appengine"
+  packages = ["cloudsql"]
+  pruneopts = "UT"
+  revision = "971852bfffca25b069c31162ae8f247a3dba083b"
+  version = "v1.6.5"
 
 [[projects]]
   digest = "1:cbc72c4c4886a918d6ab4b95e347ffe259846260f99ebdd8a198c2331cf2b2e9"
@@ -156,6 +183,8 @@
     "github.com/gin-gonic/gin",
     "github.com/golang/mock/gomock",
     "github.com/jinzhu/gorm",
+    "github.com/jinzhu/gorm/dialects/mysql",
+    "github.com/mercadolibre/go-meli-toolkit/goutils/apierrors",
     "github.com/mercadolibre/golang-restclient/rest",
     "github.com/stretchr/testify/assert",
   ]

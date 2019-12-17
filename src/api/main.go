@@ -1,10 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"github.com/herbal828/ci_cd-api/src/api/controllers/routers"
 	"github.com/herbal828/ci_cd-api/src/api/models"
 	"github.com/herbal828/ci_cd-api/src/api/services/storage"
-	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
 func init() {
@@ -22,8 +23,9 @@ func main() {
 	defer sql.Client.Close()
 	//Something was wrong stablishing the database connection
 	if err != nil {
-		//Aca un Log
+		fmt.Println("There was an error stablishing the MySQL connection")
 	}
+
 	sql.Client.AutoMigrate(&models.Configuration{}, &models.RequireStatusCheck{})
 
 	routers.SQLConnection = sql

@@ -2,6 +2,10 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/herbal828/ci_cd-api/src/api/models"
+	"github.com/herbal828/ci_cd-api/src/api/services"
+	"github.com/herbal828/ci_cd-api/src/api/services/storage"
+	"github.com/mercadolibre/go-meli-toolkit/goutils/apierrors"
 	"net/http"
 
 	"github.com/jinzhu/gorm"
@@ -20,16 +24,12 @@ type HTTPContext interface {
 //A Logger to perform all the log actions.
 type Configuration struct {
 	Service services.ConfigurationService
-	Logger  logs.Logger
 }
 
 //NewConfigurationController initializes a ConfigurationController
 func NewConfigurationController(sql storage.SQLStorage) *Configuration {
 	return &Configuration{
 		Service: services.NewConfigurationService(sql),
-		Logger: &logs.Log{
-			Component: "ConfigurationController",
-		},
 	}
 }
 
@@ -150,33 +150,4 @@ func (c *Configuration) Delete(ctx HTTPContext) {
 
 func getRepoNamefromURL(ctx HTTPContext) string {
 	return ctx.Param("repoName")
-}
-
-func (c *Configuration) GetDBInserts(ctx HTTPContext) {
-
-	error := c.Service.GetInserts()
-	if error != nil {
-		fmt.Println("Error obteniendo la lista")
-	}
-	ctx.JSON(http.StatusOK, error)
-}
-
-func (c *Configuration) GetAppPerformance(ctx HTTPContext) {
-
-	var req models.PostPerformanceBody
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.JSON(
-			http.StatusBadRequest,
-			apierrors.NewBadRequestApiError("invalid performance body"),
-		)
-		return
-	}
-
-	error := c.Service.GetAppPerformance(&req)
-
-	if error != nil {
-		fmt.Println("Error obteniendo la performance")
-	}
-
-	ctx.JSON(http.StatusOK, error)
 }

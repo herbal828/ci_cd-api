@@ -8,6 +8,7 @@ import (
 type PostRequestPayload struct {
 	Repository struct {
 		Name                *string  `json:"name"`
+		Owner               *string  `json:"owner"`
 		RequireStatusChecks []string `json:"required_status_checks"`
 	} `json:"repository"`
 
@@ -22,10 +23,6 @@ type PostRequestPayload struct {
 
 //PutRequestPayload represents the payload received in the PUT request.
 type PutRequestPayload struct {
-	Fury struct {
-		Technology *string `json:"technology"`
-	} `json:"fury"`
-
 	Repository struct {
 		Name                *string
 		RequireStatusChecks []string `json:"required_status_checks"`
@@ -40,15 +37,10 @@ type PutRequestPayload struct {
 //Has all the information needed for a good release process execution.
 type Configuration struct {
 	ID                               *string `gorm:"primary_key"`
-	ApplicationName                  *string
-	Technology                       *string
-	RepositoryURL                    *string
+	RepositoryName                   *string
+	RepositoryOwner                  *string
 	RepositoryStatusChecks           []RequireStatusCheck
 	WorkflowType                     *string
-	ContinuousIntegrationProvider    *string
-	ContinuousIntegrationURL         *string
-	BuildServerProvider              *string
-	BuildServerURL                   *string
 	CodeCoveragePullRequestThreshold *float64
 
 	//GORM date attributes
@@ -69,6 +61,8 @@ func NewConfiguration(r *PostRequestPayload) *Configuration {
 	var c Configuration
 
 	c.ID = r.Repository.Name
+	c.RepositoryName = r.Repository.Name
+	c.RepositoryOwner = r.Repository.Owner
 	c.WorkflowType = r.Workflow.Type
 	c.CodeCoveragePullRequestThreshold = r.CodeCoverage.PullRequestThreshold
 
@@ -88,9 +82,6 @@ func NewConfiguration(r *PostRequestPayload) *Configuration {
 func (c *Configuration) UpdateConfiguration(r *PutRequestPayload) {
 	if r.CodeCoverage.PullRequestThreshold != nil {
 		c.CodeCoveragePullRequestThreshold = r.CodeCoverage.PullRequestThreshold
-	}
-	if r.Fury.Technology != nil {
-		c.Technology = r.Fury.Technology
 	}
 
 	if r.Repository.RequireStatusChecks != nil {
@@ -117,23 +108,12 @@ func (c *Configuration) GetRequiredStatusCheck() []string {
 func (c *Configuration) Marshall() interface{} {
 	rsc := c.GetRequiredStatusCheck()
 	return &struct {
-		ID   string `json:"id"`
-		Fury struct {
-			AppName string `json:"application_name"`
-			Tech    string `json:"technology"`
-		} `json:"fury"`
+		ID         string `json:"id"`
 		Repository struct {
-			URL                 string   `json:"url"`
+			Name                string   `json:"name"`
+			Owner               string   `json:"owner"`
 			RequiredStatusCheck []string `json:"required_status_check"`
 		} `json:"repository"`
-		CI struct {
-			Provider string `json:"provider"`
-			URL      string `json:"url"`
-		} `json:"continuous_integration"`
-		BuildServer struct {
-			Provider string `json:"provider"`
-			URL      string `json:"url"`
-		} `json:"build_server"`
 		CodeCoverage struct {
 			PullRequestThreshold float64 `json:"pull_request_threshold"`
 		} `json:"code_coverage"`
@@ -143,32 +123,13 @@ func (c *Configuration) Marshall() interface{} {
 	}{
 		*c.ID,
 		struct {
-			AppName string `json:"application_name"`
-			Tech    string `json:"technology"`
-		}{
-			*c.ApplicationName,
-			*c.Technology,
-		},
-		struct {
-			URL                 string   `json:"url"`
+			Name                string   `json:"name"`
+			Owner               string   `json:"owner"`
 			RequiredStatusCheck []string `json:"required_status_check"`
 		}{
-			*c.RepositoryURL,
+			*c.RepositoryName,
+			*c.RepositoryOwner,
 			rsc,
-		},
-		struct {
-			Provider string `json:"provider"`
-			URL      string `json:"url"`
-		}{
-			*c.ContinuousIntegrationProvider,
-			*c.ContinuousIntegrationURL,
-		},
-		struct {
-			Provider string `json:"provider"`
-			URL      string `json:"url"`
-		}{
-			*c.BuildServerProvider,
-			*c.BuildServerURL,
 		},
 		struct {
 			PullRequestThreshold float64 `json:"pull_request_threshold"`
@@ -181,13 +142,4 @@ func (c *Configuration) Marshall() interface{} {
 			*c.WorkflowType,
 		},
 	}
-}
-
-
-type PostPerformanceBody struct {
-	ApplicationName string `json:"application_name"`
-	Start           string `json:"start"`
-	End             string `json:"end"`
-	Scope           string `json:"scope"`
-	RollupUnit      string `json:"rollup-unit"`
 }
