@@ -18,7 +18,7 @@ type ConfigurationService interface {
 
 //Configuration represents the ConfigurationService layer
 //It has an instance of a DBClient layer and
-//A Logger to perform all the log actions.
+//A github client instance
 type Configuration struct {
 	SQL          storage.SQLStorage
 	GithubClient clients.GithubClient
@@ -51,11 +51,11 @@ func (s *Configuration) Create(r *models.PostRequestPayload) (*models.Configurat
 
 		//If the configuration doesn't exist, then create it
 
-		//Set Workflow
-		if err := s.GithubClient.GetBranch(&config, "master"); err != nil {
-			return nil, err
+		setWorkflowError := s.SetWorkflow(&config)
+
+		if setWorkflowError != nil {
+			return nil, setWorkflowError
 		}
-		//TODO: Proteger los branches de gitflow
 
 		//Save it into database
 		if err := s.SQL.Insert(&config); err != nil {

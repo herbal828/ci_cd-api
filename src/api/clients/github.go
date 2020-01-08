@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"github.com/herbal828/ci_cd-api/src/api/configs"
 	"github.com/herbal828/ci_cd-api/src/api/models"
-	"github.com/herbal828/ci_cd-api/src/api/utils"
 	"github.com/mercadolibre/golang-restclient/rest"
 	"net/http"
 	"time"
@@ -17,6 +16,7 @@ import (
 
 type GithubClient interface {
 	GetBranch(config *models.Configuration, branchName string) error
+	ProtectBranch(config *models.Configuration, branchConfig *models.Branch) error
 }
 
 type githubClient struct {
@@ -26,7 +26,7 @@ type githubClient struct {
 func NewGithubClient() GithubClient {
 	hs := make(http.Header)
 	hs.Set("cache-control", "no-cache")
-	hs.Set("Authorization", "token c418a866d0dad4374b231fbc9726bb0407ada038")
+	hs.Set("Authorization", "token 051fd6be26af16cd7e8f3c9ecd54c18845f6b074")
 	hs.Set("Accept", "application/vnd.github.luke-cage-preview+json")
 
 	return &githubClient{
@@ -71,46 +71,30 @@ func (c *githubClient) GetBranch(config *models.Configuration, branchName string
 	return nil
 }
 
-//SetWorkflow enables the workflow selected in Github
-//Protects the stable branches with the given required status checks
-//It returns an error if it occurs.
-func (c *githubClient) SetWorkflow(config *models.Configuration) error {
+func (c *githubClient) ProtectBranch(config *models.Configuration, branchConfig *models.Branch) error {
 
-	//Check if the needed configuration values are ok
-	if config.WorkflowType == nil || config.ID == nil {
-		err := errors.New("invalid workflow body params")
+	if branchConfig.Name == "" {
+		err := errors.New("invalid branch protection body params")
 		return err
 	}
 
-	switch *config.WorkflowType {
-	case "gitflow":
-
-
-	}
-
-	//TODO: Hacer el switch por workflow
-	//TODO: solo vamos a aceptar workflow gitflow
-	//TODO: Traer los branches a proteger.
-	//TODO: recorrer cada branch, ver si existe. Si no existe, crear el branch y luego protegerlo.
-
-
-
-
 	body := map[string]interface{}{
-		"type":                   *config.WorkflowType,
-		"repository_name":        *config.ID,
-		"required_status_checks": config.GetRequiredStatusCheck(),
+		"enforce_admins":                true,
+		"required_status_checks":        branchConfig.Requirements.RequiredStatusChecks,
+		"required_pull_request_reviews": branchConfig.Requirements.RequiredPullRequestReviews,
 	}
 
-	response := c.Client.Post("/workflow", body)
+	response := c.Client.Put(fmt.Sprintf("/%p/branches/%s/protection", &config.RepositoryName, branchConfig.Name), body)
 
 	if response.Err() != nil {
-
 		return response.Err()
 	}
 
-	if utils.WasOK(response.StatusCode()) && utils.WasCreated(response.StatusCode()) {
-		return errors.New("error setting workflow")
+	if response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusCreated {
+		if response.StatusCode() == http.StatusNotFound {
+			return errors.New("branch not found")
+		}
+		return errors.New(fmt.Sprintf("error protecting branch - status: %d", response.StatusCode()))
 	}
 
 	return nil

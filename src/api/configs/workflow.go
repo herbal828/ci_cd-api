@@ -2,37 +2,83 @@ package configs
 
 import "github.com/herbal828/ci_cd-api/src/api/models"
 
-func getGitflowConfig() models.WorkflowConfig {
-	var gfConfig models.WorkflowConfig
-	var gfDescription models.Description
+func GetWorkflowConfiguration(configuration *models.Configuration) *models.WorkflowConfig {
+	var workflowConfig models.WorkflowConfig
 
-	var masterGFConfig models.Branch
-	var developGFConfig models.Branch
-	var releaseGFConfig models.Branch
+	switch *configuration.WorkflowType {
+	case "gitflow":
+		workflowConfig = *GetGitflowConfig(configuration)
+	default:
+		workflowConfig = *GetGitflowConfig(configuration)
+	}
 
-	masterGFConfig.Name = "master"
-	masterGFConfig.Releasable = true
-	masterGFConfig.Stable = true
-	masterGFConfig.StartWith = false
-
-	var masterRequiriments models.Requirements
-	masterRequiriments.EnforceAdmins = true
-
-	masterRequiriments.AcceptPrFrom = []string{"release", "hotfix"}
-
-
-
-	gfConfig.Name = "gitflow"
-	gfConfig.Detail = "Breve descripcion del workflow"
-
-
-
-	//gfRequirements.AcceptPrFrom = []string{"Penn", "Teller"}
-
-
-	return gfConfig
+	return &workflowConfig
 }
 
-func GetWorkflowConfig(workflow string) string {
+func GetGitflowConfig(configuration *models.Configuration) *models.WorkflowConfig {
 
+	var masterRequirements models.Requirements
+	var masterWorkflowRequiredStatusChecks models.RequiredStatusChecks
+
+	//Branch Master
+
+	masterWorkflowRequiredStatusChecks.IncludeAdmins = true
+	masterWorkflowRequiredStatusChecks.Strict = true
+	masterWorkflowRequiredStatusChecks.Contexts = GetRequiredStatusCheck(configuration)
+
+	masterRequirements.EnforceAdmins = true
+	masterRequirements.AcceptPrFrom = []string{"release", "hotfix"}
+	masterRequirements.RequiredStatusChecks = masterWorkflowRequiredStatusChecks
+
+	masterBranchConfig := models.Branch{
+		Requirements: masterRequirements,
+		Stable:       true,
+		Name:         "master",
+		Releasable:   true,
+		StartWith:    false,
+	}
+
+	//Develop Branch
+
+	var developRequirements models.Requirements
+	var developWorkflowRequiredStatusChecks models.RequiredStatusChecks
+
+	developRequirements.EnforceAdmins = true
+	developRequirements.AcceptPrFrom = []string{"feature", "fix", "enhancement", "bugfix"}
+
+	developWorkflowRequiredStatusChecks.IncludeAdmins = true
+	developWorkflowRequiredStatusChecks.Strict = true
+	developWorkflowRequiredStatusChecks.Contexts = GetRequiredStatusCheck(configuration)
+
+	developBranchConfig := models.Branch{
+		Requirements: developRequirements,
+		Stable:       true,
+		Name:         "develop",
+		Releasable:   false,
+		StartWith:    false,
+	}
+
+	//Build the gitflow configuration
+
+	gfConfig := models.WorkflowConfig{
+		Name: "gitflow",
+		Description: models.Description{
+			Branches: []models.Branch{
+				masterBranchConfig,
+				developBranchConfig,
+			},
+		},
+		Detail: "Workflow Description",
+	}
+
+	return &gfConfig
+}
+
+//GetRequiredStatusCheck maps the RepositoryStatusChecks field in the Configuration struct into a string slice.
+func GetRequiredStatusCheck(c *models.Configuration) []string {
+	var rsc []string
+	for _, rc := range c.RepositoryStatusChecks {
+		rsc = append(rsc, rc.Check)
+	}
+	return rsc
 }

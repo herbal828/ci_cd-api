@@ -7,7 +7,7 @@ type WorkflowConfig struct {
 }
 
 type Description struct {
-	Branches []struct{}
+	Branches []Branch
 }
 
 type Branch struct {

@@ -24,6 +24,7 @@ type HTTPContext interface {
 //A Logger to perform all the log actions.
 type Configuration struct {
 	Service services.ConfigurationService
+	WFService services.WorkflowService
 }
 
 //NewConfigurationController initializes a ConfigurationController
