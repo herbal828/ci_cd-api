@@ -19,6 +19,7 @@ func GetGitflowConfig(configuration *models.Configuration) *models.WorkflowConfi
 
 	var masterRequirements models.Requirements
 	var masterWorkflowRequiredStatusChecks models.RequiredStatusChecks
+	var defaultBranch = "develop"
 
 	//Branch Master
 
@@ -43,12 +44,13 @@ func GetGitflowConfig(configuration *models.Configuration) *models.WorkflowConfi
 	var developRequirements models.Requirements
 	var developWorkflowRequiredStatusChecks models.RequiredStatusChecks
 
-	developRequirements.EnforceAdmins = true
-	developRequirements.AcceptPrFrom = []string{"feature", "fix", "enhancement", "bugfix"}
-
 	developWorkflowRequiredStatusChecks.IncludeAdmins = true
 	developWorkflowRequiredStatusChecks.Strict = true
 	developWorkflowRequiredStatusChecks.Contexts = GetRequiredStatusCheck(configuration)
+
+	developRequirements.EnforceAdmins = true
+	developRequirements.AcceptPrFrom = []string{"feature", "fix", "enhancement", "bugfix"}
+	developRequirements.RequiredStatusChecks = developWorkflowRequiredStatusChecks
 
 	developBranchConfig := models.Branch{
 		Requirements: developRequirements,
@@ -61,7 +63,8 @@ func GetGitflowConfig(configuration *models.Configuration) *models.WorkflowConfi
 	//Build the gitflow configuration
 
 	gfConfig := models.WorkflowConfig{
-		Name: "gitflow",
+		Name:          "gitflow",
+		DefaultBranch: defaultBranch,
 		Description: models.Description{
 			Branches: []models.Branch{
 				masterBranchConfig,

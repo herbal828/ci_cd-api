@@ -1,9 +1,10 @@
 package models
 
 type WorkflowConfig struct {
-	Name        string `json:"name"`
-	Description Description
-	Detail      string `json:"detail"`
+	Name          string `json:"name"`
+	Description   Description
+	Detail        string `json:"detail"`
+	DefaultBranch string `json:"default_branch"`
 }
 
 type Description struct {

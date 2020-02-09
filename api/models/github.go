@@ -34,3 +34,11 @@ type BranchProtectionResponse struct {
 		Enabled bool `json:"enabled"`
 	} `json:"allow_deletions"`
 }
+
+type GetBranchResponse struct {
+	Name   string `json:"name"`
+	Commit struct {
+		Sha string `json:"sha"`
+	} `json:"commit"`
+	Protected bool `json:"protected"`
+}

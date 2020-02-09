@@ -5,7 +5,7 @@ import (
 	"github.com/herbal828/ci_cd-api/api/models"
 	"github.com/herbal828/ci_cd-api/api/services"
 	"github.com/herbal828/ci_cd-api/api/services/storage"
-	"github.com/mercadolibre/go-meli-toolkit/goutils/apierrors"
+	"github.com/herbal828/ci_cd-api/api/utils/apierrors"
 	"net/http"
 
 	"github.com/jinzhu/gorm"

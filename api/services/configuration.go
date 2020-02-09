@@ -49,8 +49,6 @@ func (s *Configuration) Create(r *models.PostRequestPayload) (*models.Configurat
 			return nil, errors.New("error checking configuration existence")
 		}
 
-		//If the configuration doesn't exist, then create it
-
 		setWorkflowError := s.SetWorkflow(&config)
 
 		if setWorkflowError != nil {
