@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/herbal828/ci_cd-api/api/controllers/routers"
 	"github.com/herbal828/ci_cd-api/api/models"
+	"github.com/herbal828/ci_cd-api/api/models/webhook"
 	"github.com/herbal828/ci_cd-api/api/services/storage"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
@@ -26,7 +27,7 @@ func main() {
 		fmt.Println("There was an error stablishing the MySQL connection")
 	}
 
-	sql.Client.AutoMigrate(&models.Configuration{}, &models.RequireStatusCheck{})
+	sql.Client.AutoMigrate(&models.Configuration{}, &models.RequireStatusCheck{}, &webhook.Webhook{})
 
 	routers.SQLConnection = sql
 

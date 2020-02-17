@@ -28,3 +28,11 @@ func WasNoContent(responseStatus int) bool  {
 
 	return false
 }
+
+//HTTPContext defines all the
+type HTTPContext interface {
+	BindJSON(interface{}) error
+	GetHeader(string) string
+	JSON(int, interface{})
+	Param(key string) string
+}
