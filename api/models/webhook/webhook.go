@@ -25,6 +25,16 @@ type Webhook struct {
 	UpdatedAt time.Time
 }
 
+//GithubPayload represents the content of a Github Webhook
+type GithubWebhookStandardPayload struct {
+
+	//Repository represents the application repository info
+	Repository *struct {
+		FullName *string `json:"full_name"`
+		Name *string `json:"name"`
+	} `json:"repository"`
+}
+
 //Marshall converts the Configuration struct into a readable JSON interface.
 func (c *Webhook) Marshall() interface{} {
 	return &struct {

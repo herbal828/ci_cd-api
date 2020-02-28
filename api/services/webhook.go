@@ -1,18 +1,22 @@
 package services
 
 import (
-	"errors"
+	"bytes"
+	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"github.com/herbal828/ci_cd-api/api/clients"
+	"github.com/herbal828/ci_cd-api/api/models"
 	"github.com/herbal828/ci_cd-api/api/models/webhook"
 	"github.com/herbal828/ci_cd-api/api/services/storage"
 	"github.com/herbal828/ci_cd-api/api/utils"
 	"github.com/herbal828/ci_cd-api/api/utils/apierrors"
 	"github.com/jinzhu/gorm"
+	"io/ioutil"
 )
 
 type WebhookService interface {
-	CreateWebhook(ctx utils.HTTPContext) (*webhook.Webhook, error)
-	ProcessStatusWebhook(ctx utils.HTTPContext) (*webhook.Webhook, error)
+	CreateWebhook(ctx *gin.Context, webhookEvent string) (*webhook.Webhook, apierrors.ApiError)
+	ProcessStatusWebhook(ctx utils.HTTPContext, conf *models.Configuration) (*webhook.Webhook, apierrors.ApiError)
 }
 
 //Webhook represents the WebhookService layer
@@ -36,11 +40,36 @@ func NewWebhookService(sql storage.SQLStorage) *Webhook {
 //	200OK in case of a success processing the creation
 //	400BadRequest in case of an error parsing the request payload
 //	500InternalServerError in case of an internal error procesing the creation
-func (s *Webhook) CreateWebhook(ctx utils.HTTPContext) (*webhook.Webhook, error) {
+func (s *Webhook) CreateWebhook(ctx *gin.Context, webhookEvent string) (*webhook.Webhook, apierrors.ApiError) {
+
+	// Read the content
+	var bodyBytes []byte
+	if ctx.Request.Body != nil {
+		bodyBytes, _ = ioutil.ReadAll(ctx.Request.Body)
+	}
+	// Restore the io.ReadCloser to its original state
+	ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+
+	//validate that the repository comes in the payload
+	var ghPayload webhook.GithubWebhookStandardPayload
+	if err := json.Unmarshal(bodyBytes, &ghPayload); err != nil {
+		return nil, apierrors.NewBadRequestApiError("invalid github webhook payload")
+	}
+
+	repository := ghPayload.Repository.Name
+
+	var config models.Configuration
+
+	//Validates that the repository has a ci cd configuration
+	if err := s.SQL.GetBy(&config, "id = ?", *repository); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, apierrors.NewNotFoundApiError("repository dosn't have a ci-cd configuration")
+		} else {
+			return nil, apierrors.NewInternalServerApiError("error checking configuration existence", err)
+		}
+	}
 
 	var wh webhook.Webhook
-
-	webhookEvent := ctx.GetHeader("X-GitHub-Event")
 
 	if webhookEvent == "" {
 		return nil, apierrors.NewBadRequestApiError("x-github-event is null")
@@ -48,7 +77,7 @@ func (s *Webhook) CreateWebhook(ctx utils.HTTPContext) (*webhook.Webhook, error)
 
 	switch webhookEvent {
 	case "status":
-		wh, err := s.ProcessStatusWebhook(ctx)
+		wh, err := s.ProcessStatusWebhook(ctx, &config)
 		if err != nil {
 			return nil, err
 		}
@@ -56,6 +85,11 @@ func (s *Webhook) CreateWebhook(ctx utils.HTTPContext) (*webhook.Webhook, error)
 	case "pull_request_review":
 	case "issue_comment":
 	case "pull_request":
+		wh, err := s.ProcessStatusWebhook(ctx, &config)
+		if err != nil {
+			return nil, err
+		}
+		return wh, nil
 	case "create":
 	default:
 		return nil, apierrors.NewBadRequestApiError("Event not supported yet")
@@ -64,7 +98,7 @@ func (s *Webhook) CreateWebhook(ctx utils.HTTPContext) (*webhook.Webhook, error)
 }
 
 //ProcessStatusWebhook process
-func (s *Webhook) ProcessStatusWebhook(ctx utils.HTTPContext) (*webhook.Webhook, error) {
+func (s *Webhook) ProcessStatusWebhook(ctx utils.HTTPContext, conf *models.Configuration) (*webhook.Webhook, apierrors.ApiError) {
 
 	var statusWH webhook.Status
 	var wh webhook.Webhook
@@ -73,9 +107,13 @@ func (s *Webhook) ProcessStatusWebhook(ctx utils.HTTPContext) (*webhook.Webhook,
 		return nil, apierrors.NewBadRequestApiError("invalid status webhook payload")
 	}
 
+	contextAllowed := utils.Contains(conf.RepositoryStatusChecks, statusWH.Context)
+	if !contextAllowed {
+		return nil, apierrors.NewBadRequestApiError("Context not configured for the repository")
+	}
+
 	//Build a ID to identify a unique webhook
 	shBaseID := statusWH.Repository.FullName + statusWH.Sha + statusWH.Context + statusWH.State
-
 	statusWebhookID := utils.Stringify(utils.GetMD5Hash(shBaseID))
 
 	//Search the status webhook into database
@@ -83,7 +121,7 @@ func (s *Webhook) ProcessStatusWebhook(ctx utils.HTTPContext) (*webhook.Webhook,
 
 		//If the error is not a not found error, then there is a problem
 		if err != gorm.ErrRecordNotFound {
-			return nil, errors.New("error checking configuration existence")
+			return nil, apierrors.NewNotFoundApiError("error checking configuration existence")
 		}
 
 		//Fill every field in the webhook
@@ -101,7 +139,7 @@ func (s *Webhook) ProcessStatusWebhook(ctx utils.HTTPContext) (*webhook.Webhook,
 
 		//Save it into database
 		if err := s.SQL.Insert(&wh); err != nil {
-			return nil, errors.New("error saving new status webhook")
+			return nil, apierrors.NewInternalServerApiError("error saving new status webhook", err)
 		}
 
 	} else { //If webhook already exists then return it

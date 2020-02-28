@@ -1,6 +1,8 @@
 package utils
 
-import "net/http"
+import (
+	"net/http"
+)
 
 func WasOK(responseStatus int) bool  {
 
@@ -31,8 +33,10 @@ func WasNoContent(responseStatus int) bool  {
 
 //HTTPContext defines all the
 type HTTPContext interface {
+	GetRawData() ([]byte, error)
 	BindJSON(interface{}) error
 	GetHeader(string) string
 	JSON(int, interface{})
 	Param(key string) string
+	ShouldBindJSON(interface{}) error
 }
